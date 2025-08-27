@@ -20,6 +20,21 @@ export const metadata: Metadata = {
     shortcut: "https://img.icons8.com/color-pixels/500/cherry.png",   // 快捷方式
     apple: "https://img.icons8.com/color-pixels/500/cherry.png",      // iOS 桌面图标
   },
+  openGraph: {
+    title: "YV",
+    description: "小怡 TV",
+    siteName: "YV",
+    images: [
+      {
+        url: "https://img.icons8.com/color-pixels/500/cherry.png",
+        width: 500,
+        height: 500,
+        alt: "YV Logo",
+      },
+    ],
+    locale: "zh_CN",
+    type: "website",
+  },
 };
 
 export const viewport: Viewport = {
