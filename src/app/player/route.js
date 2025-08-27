@@ -12,7 +12,7 @@ export async function GET(request) {
 <html lang="zh">
 <head>
   <meta charset="UTF-8" />
-  <title>ArtPlayer（带控件，极简）</title>
+  <title>ArtPlayer</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <style>
     html, body { height: 100%; margin: 0; background: #000; }
