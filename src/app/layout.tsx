@@ -9,13 +9,11 @@ export default function RootLayout({
   return (
     <html lang="zh" suppressHydrationWarning>
       <head>
-        <title>YV</title>
-        <meta name="description" content="小怡TV" />
+        <title>YV - 小怡TV</title>
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <link rel="icon" href="/favicon.ico" />
         <link rel="apple-touch-icon" href="/logo.png" />
         
-        <meta property="og:title" content="YV" />
         <meta property="og:description" content="小怡TV" />
         <meta property="og:image" content="/logo.png" />
         <meta property="og:type" content="website" />
