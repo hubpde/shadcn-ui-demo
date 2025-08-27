@@ -7,7 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { AspectRatio } from '@/components/ui/aspect-ratio';
-import { Search, Play, Loader2, ArrowLeft, Calendar, Clock, Star, Users, Film, MapPin, ChevronRight, ExternalLink, X, RotateCcw, History } from 'lucide-react';
+import { Search, Play, Loader2, ArrowLeft, Calendar, Clock, Star, Users, Film, MapPin, ChevronRight, ExternalLink, X, History } from 'lucide-react';
 
 const API_BASE = 'https://proxy.030101.xyz/https://mozhuazy.com/api.php/provide/vod/';
 
@@ -114,6 +114,7 @@ export default function Home() {
 
   useEffect(() => {
     fetchRecommendedVideos();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const handleSearch = async (query?: string) => {
