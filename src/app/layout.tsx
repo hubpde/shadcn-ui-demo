@@ -2,37 +2,32 @@ import type { Metadata, Viewport } from "next"
 import { Geist, Geist_Mono } from "next/font/google"
 import "./globals.css"
 import { ThemeProvider } from "@/components/theme-provider"
-
 const geistSans = Geist({
   variable: "--font-geist-sans",
   subsets: ["latin"],
 })
-
 const geistMono = Geist_Mono({
   variable: "--font-geist-mono",
   subsets: ["latin"],
 })
-
 export const metadata: Metadata = {
-  title: "YV",
+  title: "YV - 小怡TV",
   description: "小怡TV",
-  icons: "https://img.icons8.com/color-pixels/300/cherry.png",
+  icons: "/logo.png",
   openGraph: {
     title: "YV",
     description: "小怡 TV",
     siteName: "YV",
-    images: [{ url: "https://img.icons8.com/color-pixels/300/cherry.png", alt: "YV Logo" }],
+    images: [{ url: "/logo.png", alt: "YV Logo" }],
     locale: "zh_CN",
     type: "website",
   },
 }
-
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
   maximumScale: 5,
 }
-
 export default function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
