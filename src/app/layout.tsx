@@ -16,9 +16,9 @@ export const metadata: Metadata = {
   title: "YV",
   description: "小怡TV",
   icons: {
-    icon: "https://img.icons8.com/color-pixels/500/cherry.png",       // 常规 favicon
-    shortcut: "https://img.icons8.com/color-pixels/500/cherry.png",   // 快捷方式
-    apple: "https://img.icons8.com/color-pixels/500/cherry.png",      // iOS 桌面图标
+    icon: "https://img.icons8.com/color-pixels/300/cherry.png",       // 常规 favicon
+    shortcut: "https://img.icons8.com/color-pixels/300/cherry.png",   // 快捷方式
+    apple: "https://img.icons8.com/color-pixels/300/cherry.png",      // iOS 桌面图标
   },
   openGraph: {
     title: "YV",
@@ -26,7 +26,7 @@ export const metadata: Metadata = {
     siteName: "YV",
     images: [
       {
-        url: "https://img.icons8.com/color-pixels/400/cherry.png",
+        url: "https://img.icons8.com/color-pixels/300/cherry.png",
         alt: "YV Logo",
       },
     ],
