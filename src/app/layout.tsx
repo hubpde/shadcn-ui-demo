@@ -14,7 +14,12 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: "YV",
-  description: "发现精彩影视内容",
+  description: "小怡TV",
+  icons: {
+    icon: "https://img.icons8.com/color-pixels/500/cherry.png",       // 常规 favicon
+    shortcut: "https://img.icons8.com/color-pixels/500/cherry.png",   // 快捷方式
+    apple: "https://img.icons8.com/color-pixels/500/cherry.png",      // iOS 桌面图标
+  },
 };
 
 export const viewport: Viewport = {
