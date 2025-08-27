@@ -1,14 +1,13 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import Image from 'next/image';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { AspectRatio } from '@/components/ui/aspect-ratio';
-import { Search, Play, Loader2, ArrowLeft, Calendar, Clock, Star, Users, Film, MapPin, ChevronRight, ExternalLink, X, History } from 'lucide-react';
+import { Search, Play, Loader2, ArrowLeft, Calendar, Clock, Star, Users, Film, MapPin, ChevronRight, ExternalLink, X, RotateCcw, History } from 'lucide-react';
 
 const API_BASE = 'https://proxy.030101.xyz/https://mozhuazy.com/api.php/provide/vod/';
 
@@ -57,7 +56,7 @@ export default function Home() {
   const [retryCount, setRetryCount] = useState(0);
   
   const inputRef = useRef<HTMLInputElement>(null);
-  const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const searchTimeoutRef = useRef<NodeJS.Timeout>();
 
   // 从本地存储加载搜索历史
   useEffect(() => {
@@ -115,7 +114,6 @@ export default function Home() {
 
   useEffect(() => {
     fetchRecommendedVideos();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const handleSearch = async (query?: string) => {
@@ -563,11 +561,10 @@ export default function Home() {
               <div className="md:col-span-1">
                 {selectedVideo.vod_pic && (
                   <AspectRatio ratio={3/4} className="mb-6">
-                    <Image 
+                    <img 
                       src={selectedVideo.vod_pic} 
                       alt={selectedVideo.vod_name}
-                      fill
-                      className="object-cover rounded-lg"
+                      className="object-cover w-full h-full rounded-lg"
                       onError={(e) => {
                         e.currentTarget.style.display = 'none';
                       }}
