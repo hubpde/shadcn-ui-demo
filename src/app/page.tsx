@@ -153,7 +153,8 @@ export default function Home() {
   };
 
   const playEpisode = (url: string, index: number) => {
-    setCurrentVideoUrl(`https://mzm3u8jx.com/aliplayer.html?url=${url}`);
+    // setCurrentVideoUrl(`https://mzm3u8jx.com/aliplayer.html?url=${url}`);
+    setCurrentVideoUrl(`https://tools.liumingye.cn/m3u8/#${url}`);
     setCurrentEpisodeIndex(index);
   };
 
