@@ -26,9 +26,7 @@ export const metadata: Metadata = {
     siteName: "YV",
     images: [
       {
-        url: "https://img.icons8.com/color-pixels/500/cherry.png",
-        width: 500,
-        height: 500,
+        url: "https://img.icons8.com/color-pixels/400/cherry.png",
         alt: "YV Logo",
       },
     ],
