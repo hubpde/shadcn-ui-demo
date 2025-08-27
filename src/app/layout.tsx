@@ -16,11 +16,7 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "YV",
   description: "小怡TV",
-  icons: {
-    icon: "https://img.icons8.com/color-pixels/300/cherry.png",
-    shortcut: "https://img.icons8.com/color-pixels/300/cherry.png",
-    apple: "https://img.icons8.com/color-pixels/300/cherry.png",
-  },
+  icons: "https://img.icons8.com/color-pixels/300/cherry.png",
   openGraph: {
     title: "YV",
     description: "小怡 TV",
