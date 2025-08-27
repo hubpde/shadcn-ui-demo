@@ -1,15 +1,15 @@
-// 文件：functions/api/[[path]].js
+// 路径：src/app/api/[[...path]]/route.js
+export const runtime = 'edge' // Cloudflare Pages 需要 Edge Runtime
 
-export default async function handler(req, res) {
-  const targetUrl = 'https://mozhuazy.com' + req.url.replace(/^\/api/, '')
+const proxy = (req) => {
+  const url = new URL(req.url)
+  url.hostname = 'mozhuazy.com'
+  url.protocol = 'https:'
+  url.port = '' // 用默认 443
 
-  const response = await fetch(targetUrl, {
-    method: req.method,
-    headers: req.headers,
-    body: req.method !== 'GET' && req.method !== 'HEAD' ? req : undefined,
-  })
-
-  res.status(response.status)
-  response.headers.forEach((value, key) => res.setHeader(key, value))
-  response.body.pipe(res)
+  // 最简：克隆原请求，只改 URL（Host 会随 URL 自动匹配）
+  return fetch(new Request(url, req))
 }
+
+// 覆盖常见所有方法（最简复用）
+export { proxy as GET, proxy as POST, proxy as PUT, proxy as DELETE, proxy as PATCH, proxy as HEAD, proxy as OPTIONS }
