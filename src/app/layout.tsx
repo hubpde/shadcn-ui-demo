@@ -13,7 +13,7 @@ const geistMono = Geist_Mono({
 })
 
 export const metadata: Metadata = {
-  title: "YV",
+  title: "YV - 小怡TV",
   description: "小怡TV",
   icons: {
     icon: "/favicon.ico", // 浏览器标签页图标
