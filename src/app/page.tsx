@@ -56,7 +56,7 @@ export default function Home() {
   const [retryCount, setRetryCount] = useState(0);
   
   const inputRef = useRef<HTMLInputElement>(null);
-  const searchTimeoutRef = useRef<NodeJS.Timeout>();
+  const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   // 从本地存储加载搜索历史
   useEffect(() => {
