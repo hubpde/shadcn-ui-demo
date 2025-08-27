@@ -328,7 +328,7 @@ export default function Home() {
         )}
 
         {/* 搜索区域 */}
-        <div className={selectedVideo ? 'py-4' : 'py-14'}>
+        <div className={selectedVideo ? 'py-4' : 'py-12'}>
           <div className="max-w-2xl mx-auto text-center space-y-6">
             {!selectedVideo && (
               <div className="space-y-3">
