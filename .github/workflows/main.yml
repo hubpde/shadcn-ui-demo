@@ -54,23 +54,17 @@ jobs:
           npm install
           npm run build || true
 
-      - name: Commit & Force Push
+      - name: Commit & Force Push (main only)
         shell: bash
         run: |
           set -e
           git config user.name  "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          BRANCH="${GITHUB_REF_NAME:-main}"
           TIME=$(TZ=Asia/Shanghai date +"%Y-%m-%d %H:%M:%S")
 
-          git fetch origin "$BRANCH" || true
-          if git rev-parse --verify "$BRANCH" >/dev/null 2>&1; then
-            git checkout "$BRANCH"
-          else
-            git checkout -b "$BRANCH"
-          fi
-          git rebase "origin/$BRANCH" || true
+          # 确保只在 main 分支
+          git checkout -B main
 
           git add -A
           git commit --allow-empty -m "$TIME"
-          git push --force origin "$BRANCH"
+          git push --force origin main
