@@ -9,7 +9,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { AspectRatio } from '@/components/ui/aspect-ratio';
-import { Search, Play, Loader2, ArrowLeft, Calendar, Clock, Star, Users, Film, MapPin, ChevronRight } from 'lucide-react';
+import { Search, Play, Loader2, ArrowLeft, Calendar, Clock, Star, Users, Film, MapPin, ChevronRight, Sun, Moon } from 'lucide-react';
 
 const API_BASE = 'https://mozhuazy.com/api.php/provide/vod/';
 
@@ -53,10 +53,18 @@ export default function Home() {
   const [hasSearched, setHasSearched] = useState(false);
   const [recommendedVideos, setRecommendedVideos] = useState<VideoItem[]>([]);
   const [loadingRecommended, setLoadingRecommended] = useState(false);
+  const [theme, setTheme] = useState<'light' | 'dark'>('light');
 
   const showError = (message: string) => {
     setError(message);
     setTimeout(() => setError(''), 5000);
+  };
+
+  const toggleTheme = () => {
+    const newTheme = theme === 'light' ? 'dark' : 'light';
+    setTheme(newTheme);
+    localStorage.setItem('theme', newTheme);
+    document.documentElement.classList.toggle('dark', newTheme === 'dark');
   };
 
   const fetchRecommendedVideos = async () => {
@@ -77,6 +85,14 @@ export default function Home() {
 
   useEffect(() => {
     fetchRecommendedVideos();
+    
+    // 初始化主题
+    const savedTheme = localStorage.getItem('theme') as 'light' | 'dark';
+    const systemTheme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+    const initialTheme = savedTheme || systemTheme;
+    
+    setTheme(initialTheme);
+    document.documentElement.classList.toggle('dark', initialTheme === 'dark');
   }, []);
 
   const handleSearch = async () => {
@@ -258,6 +274,19 @@ export default function Home() {
         )}
 
         <div className="space-y-8">
+          {/* 顶部工具栏 */}
+          <div className="flex justify-end">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={toggleTheme}
+              className="gap-2"
+            >
+              {theme === 'dark' ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+              {theme === 'dark' ? '浅色' : '深色'}
+            </Button>
+          </div>
+
           {/* 搜索区域 */}
           <div className={selectedVideo ? 'py-4' : 'py-16'}>
             <div className="max-w-2xl mx-auto text-center space-y-6">
