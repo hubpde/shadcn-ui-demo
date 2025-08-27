@@ -1,4 +1,4 @@
-// 文件: src/app/api/[[...path]]/route.js
+// 文件: src/app/api/route.js
 export const runtime = 'edge'
 
 const proxy = (req) => {
@@ -6,9 +6,9 @@ const proxy = (req) => {
   url.hostname = 'mozhuazy.com'
   url.protocol = 'https:'
   url.port = ''
-
-  // 去掉 /api 前缀
-  url.pathname = url.pathname.replace(/^\/api/, '') || '/'
+  
+  // 去掉开头的 /api 前缀
+  url.pathname = url.pathname.replace(/^\/api/, '')
 
   return fetch(new Request(url, req))
 }
