@@ -270,7 +270,7 @@ export default function Home() {
               <div className="flex gap-2">
                 <div className="relative flex-1">
                   <Input
-                    placeholder="搜索电影、电视剧、动漫..."
+                    placeholder="公主今天看点什么？"
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                     onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
