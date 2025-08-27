@@ -492,6 +492,7 @@ export default function Home() {
                             height="100%"
                             frameBorder="0"
                             allowFullScreen
+                            allow="fullscreen; autoplay; encrypted-media; picture-in-picture"
                             className="rounded-b-lg"
                           />
                         </AspectRatio>
