@@ -40,7 +40,7 @@ export async function GET(request) {
       autoplay: true,
       // —— 控件/功能开关（常用）——
       fullscreen: true,         // 原生全屏按钮
-      fullscreenWeb: true,      // 网页全屏按钮
+      fullscreenWeb: false,      // 网页全屏按钮
       pip: true,                // 画中画
       playbackRate: true,       // 倍速
       setting: true,            // 右上角设置
