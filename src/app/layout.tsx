@@ -13,7 +13,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "视频搜索",
+  title: "YV",
   description: "发现精彩影视内容",
 };
 
