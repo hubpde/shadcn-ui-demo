@@ -30,8 +30,8 @@ export async function GET(request) {
   
   ${videoUrl ? `
   <!-- 依赖 -->
-  <script src="https://cdn.jsdelivr.net/npm/hls.js@1.5.15/dist/hls.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/artplayer@5.1.4/dist/artplayer.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/hls.js/dist/hls.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/artplayer/dist/artplayer.min.js"></script>
   <script>
     const art = new Artplayer({
       container: '#player',
