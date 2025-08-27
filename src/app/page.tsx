@@ -11,7 +11,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { AspectRatio } from '@/components/ui/aspect-ratio';
 import { Search, Play, Loader2, ArrowLeft, Calendar, Clock, Star, Users, Film, MapPin, ChevronRight } from 'lucide-react';
 
-const API_BASE = 'https://proxy.030101.xyz/https://mozhuazy.com/api.php/provide/vod/';
+const API_BASE = '/api/api.php/provide/vod/';
 
 interface VideoItem {
   vod_id: number;
