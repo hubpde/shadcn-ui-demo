@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
+import Image from 'next/image';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -562,10 +563,11 @@ export default function Home() {
               <div className="md:col-span-1">
                 {selectedVideo.vod_pic && (
                   <AspectRatio ratio={3/4} className="mb-6">
-                    <img 
+                    <Image 
                       src={selectedVideo.vod_pic} 
                       alt={selectedVideo.vod_name}
-                      className="object-cover w-full h-full rounded-lg"
+                      fill
+                      className="object-cover rounded-lg"
                       onError={(e) => {
                         e.currentTarget.style.display = 'none';
                       }}
