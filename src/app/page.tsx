@@ -1,15 +1,31 @@
-'use client';
+"use client";
 
-import { useState, useEffect, useRef } from 'react';
-import { Input } from '@/components/ui/input';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { AspectRatio } from '@/components/ui/aspect-ratio';
-import { Search, Play, Loader2, ArrowLeft, Calendar, Clock, Star, Users, Film, MapPin, ChevronRight, ExternalLink, X, History } from 'lucide-react';
+import { useState, useEffect, useRef } from "react";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { Card, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { AspectRatio } from "@/components/ui/aspect-ratio";
+import {
+  Search,
+  Play,
+  Loader2,
+  ArrowLeft,
+  Calendar,
+  Clock,
+  Star,
+  Users,
+  Film,
+  MapPin,
+  ChevronRight,
+  ExternalLink,
+  X,
+  History,
+} from "lucide-react";
+import { toast } from "sonner";
 
-const API_BASE = '/api/api.php/provide/vod/';
+const API_BASE =
+  "/api/api.php/provide/vod/";
 
 interface VideoItem {
   vod_id: number;
@@ -39,74 +55,105 @@ interface SearchResponse {
 }
 
 export default function Home() {
-  const [searchQuery, setSearchQuery] = useState('');
+  const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState<VideoItem[]>([]);
   const [loading, setLoading] = useState(false);
   const [selectedVideo, setSelectedVideo] = useState<VideoItem | null>(null);
   const [episodes, setEpisodes] = useState<string[]>([]);
   const [loadingEpisodes, setLoadingEpisodes] = useState(false);
-  const [currentVideoUrl, setCurrentVideoUrl] = useState('');
-  const [error, setError] = useState<string>('');
-  const [currentEpisodeIndex, setCurrentEpisodeIndex] = useState<number | null>(null);
+  const [currentVideoUrl, setCurrentVideoUrl] = useState("");
+  const [currentEpisodeIndex, setCurrentEpisodeIndex] = useState<number | null>(
+    null
+  );
   const [hasSearched, setHasSearched] = useState(false);
   const [recommendedVideos, setRecommendedVideos] = useState<VideoItem[]>([]);
   const [loadingRecommended, setLoadingRecommended] = useState(false);
   const [searchHistory, setSearchHistory] = useState<string[]>([]);
   const [showHistory, setShowHistory] = useState(false);
-  const [retryCount, setRetryCount] = useState(0);
-  
+
   const inputRef = useRef<HTMLInputElement>(null);
   const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-  // 从本地存储加载搜索历史
+  // 简单超时封装
+  const fetchWithTimeout = async (url: string, ms = 15000) => {
+    const controller = new AbortController();
+    const id = setTimeout(() => controller.abort(), ms);
+    try {
+      const res = await fetch(url, { signal: controller.signal });
+      return res;
+    } finally {
+      clearTimeout(id);
+    }
+  };
+
+  // —— 工具：拉取详情补全（拿到海报等字段） —— //
+  const enrichWithDetails = async (items: VideoItem[]): Promise<VideoItem[]> => {
+    if (!items?.length) return [];
+    const ids = items.map((i) => i.vod_id).join(",");
+    try {
+      const res = await fetchWithTimeout(`${API_BASE}?ac=detail&ids=${ids}`);
+      const data: SearchResponse = await res.json();
+      if (data?.code === 1 && Array.isArray(data.list)) {
+        const map = new Map<number, VideoItem>();
+        data.list.forEach((v) => map.set(v.vod_id, v));
+        return items.map((v) => ({ ...v, ...(map.get(v.vod_id) || {}) }));
+      }
+    } catch {}
+    return items; // 失败则退回原数据
+  };
+
+  // —— 从本地存储加载搜索历史 —— //
   useEffect(() => {
-    const saved = localStorage.getItem('search_history');
+    const saved = localStorage.getItem("search_history");
     if (saved) {
       try {
         setSearchHistory(JSON.parse(saved));
-      } catch {
-        // 忽略解析错误
-      }
+      } catch {}
     }
   }, []);
 
-  // 保存搜索历史到本地存储
+  // —— 保存搜索历史 —— //
   const saveSearchHistory = (query: string) => {
     if (!query.trim()) return;
-    
-    const newHistory = [query, ...searchHistory.filter(item => item !== query)].slice(0, 10);
+    const newHistory = [query, ...searchHistory.filter((item) => item !== query)].slice(0, 10);
     setSearchHistory(newHistory);
-    localStorage.setItem('search_history', JSON.stringify(newHistory));
+    localStorage.setItem("search_history", JSON.stringify(newHistory));
   };
 
-  // 清空搜索历史
+  // —— 清空搜索历史（带撤销） —— //
   const clearSearchHistory = () => {
+    const old = [...searchHistory];
     setSearchHistory([]);
-    localStorage.removeItem('search_history');
+    localStorage.removeItem("search_history");
+    toast.success("已清空搜索历史", {
+      action: {
+        label: "撤销",
+        onClick: () => {
+          setSearchHistory(old);
+          localStorage.setItem("search_history", JSON.stringify(old));
+        },
+      },
+    });
   };
 
   const showError = (message: string) => {
-    setError(message);
-    setTimeout(() => setError(''), 5000);
+    toast.error(message);
   };
 
+  // —— 推荐内容 —— //
   const fetchRecommendedVideos = async () => {
     setLoadingRecommended(true);
     try {
-      const response = await fetch(`${API_BASE}?ac=list`);
+      const response = await fetchWithTimeout(`${API_BASE}?ac=list`);
       const data: SearchResponse = await response.json();
-      
       if (data.code === 1) {
-        setRecommendedVideos(data.list?.slice(0, 12) || []);
+        const base = data.list?.slice(0, 12) || [];
+        const enriched = await enrichWithDetails(base);
+        setRecommendedVideos(enriched);
       }
     } catch {
-      // 静默失败，可以添加重试逻辑
-      if (retryCount < 3) {
-        setTimeout(() => {
-          setRetryCount(prev => prev + 1);
-          fetchRecommendedVideos();
-        }, 2000);
-      }
+      // 轻量失败提示（不做重试/退避）
+      showError("获取推荐内容失败，请稍后重试");
     } finally {
       setLoadingRecommended(false);
     }
@@ -114,30 +161,34 @@ export default function Home() {
 
   useEffect(() => {
     fetchRecommendedVideos();
-  }, [retryCount]);
+  }, []);
 
+  // —— 搜索 —— //
   const handleSearch = async (query?: string) => {
     const searchTerm = query || searchQuery;
     if (!searchTerm.trim()) return;
-    
+
     setLoading(true);
     setHasSearched(true);
     setSelectedVideo(null);
-    setCurrentVideoUrl('');
+    setCurrentVideoUrl("");
     setEpisodes([]);
     setCurrentEpisodeIndex(null);
     setShowHistory(false);
-    
-    // 保存到搜索历史
+
     saveSearchHistory(searchTerm);
-    
+
     try {
-      const response = await fetch(`${API_BASE}?ac=list&wd=${encodeURIComponent(searchTerm)}`);
+      const response = await fetchWithTimeout(
+        `${API_BASE}?ac=list&wd=${encodeURIComponent(searchTerm)}`
+      );
       const data: SearchResponse = await response.json();
-      
+
       if (data.code === 1) {
-        setSearchResults(data.list || []);
-        if (data.list?.length === 0) {
+        const base = data.list || [];
+        const enriched = await enrichWithDetails(base);
+        setSearchResults(enriched);
+        if (base.length === 0) {
           showError("未找到相关内容，试试其他关键词");
         }
       } else {
@@ -152,15 +203,10 @@ export default function Home() {
     }
   };
 
-  // 防抖搜索
+  // —— 输入变化 —— //
   const handleInputChange = (value: string) => {
     setSearchQuery(value);
-    
-    if (searchTimeoutRef.current) {
-      clearTimeout(searchTimeoutRef.current);
-    }
-    
-    // 如果输入为空，显示搜索历史
+    if (searchTimeoutRef.current) clearTimeout(searchTimeoutRef.current);
     if (!value.trim() && searchHistory.length > 0) {
       setShowHistory(true);
     } else {
@@ -168,55 +214,79 @@ export default function Home() {
     }
   };
 
-  // 清空输入框
+  // —— 清空输入框 —— //
   const clearSearch = () => {
-    setSearchQuery('');
+    setSearchQuery("");
     setShowHistory(false);
     inputRef.current?.focus();
   };
 
-  // 重置到首页
+  // —— 重置到首页 —— //
   const resetToHome = () => {
-    setSearchQuery('');
+    setSearchQuery("");
     setSearchResults([]);
     setSelectedVideo(null);
-    setCurrentVideoUrl('');
+    setCurrentVideoUrl("");
     setEpisodes([]);
     setCurrentEpisodeIndex(null);
     setHasSearched(false);
     setShowHistory(false);
-    setError('');
   };
 
+  // —— 获取剧集（并滚到顶部）—— //
   const fetchEpisodes = async (video: VideoItem) => {
     setSelectedVideo(video);
-    setLoadingEpisodes(true);
-    setCurrentVideoUrl('');
-    setCurrentEpisodeIndex(null);
-    
+    // 进入详情时滚动到顶部
     try {
-      const response = await fetch(`${API_BASE}?ac=detail&ids=${video.vod_id}`);
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    } catch {}
+    setLoadingEpisodes(true);
+    setCurrentVideoUrl("");
+    setCurrentEpisodeIndex(null);
+
+    try {
+      const response = await fetchWithTimeout(`${API_BASE}?ac=detail&ids=${video.vod_id}`);
       const data: SearchResponse = await response.json();
-      
+
       if (data.code === 1 && data.list && data.list.length > 0) {
         const videoData = data.list[0];
         setSelectedVideo(videoData);
-        const playUrl = videoData.vod_play_url || '';
-        
+
+        const playUrl = videoData.vod_play_url || "";
         const episodeUrls: string[] = [];
         if (playUrl) {
-          const episodes = playUrl.split('#');
-          episodes.forEach(episode => {
-            const parts = episode.split('$');
-            if (parts.length === 2 && parts[1].includes('.m3u8')) {
-              episodeUrls.push(parts[1]);
+          const eps = playUrl.split("#");
+          eps.forEach((ep) => {
+            const parts = ep.split("$");
+            const url = parts.length === 2 ? parts[1] : "";
+            if (url && url.startsWith("http") && url.includes(".m3u8")) {
+              episodeUrls.push(url);
             }
           });
         }
-        
+
         setEpisodes(episodeUrls);
+
+        // 读取上次播放集数
+        const lastKey = `last_ep_${videoData.vod_id}`;
+        const lastIndexRaw = localStorage.getItem(lastKey);
+        const lastIndex =
+          lastIndexRaw !== null ? Math.max(0, parseInt(lastIndexRaw, 10)) : null;
+
         if (episodeUrls.length === 1) {
-          playEpisode(episodeUrls[0], 0);
+          toast.info("已为你自动开始播放");
+          playEpisode(episodeUrls[0], 0, videoData.vod_id);
+        } else if (episodeUrls.length > 1) {
+          if (
+            lastIndex !== null &&
+            !Number.isNaN(lastIndex) &&
+            lastIndex < episodeUrls.length
+          ) {
+            toast.info(`已为你定位到上次播放的第 ${lastIndex + 1} 集`);
+            playEpisode(episodeUrls[lastIndex], lastIndex, videoData.vod_id);
+          }
+        } else {
+          showError("未找到播放资源");
         }
       } else {
         setEpisodes([]);
@@ -230,79 +300,123 @@ export default function Home() {
     }
   };
 
-  const playEpisode = (url: string, index: number) => {
+  // —— 播放 —— //
+  const playEpisode = (url: string, index: number, vodId?: number) => {
     setCurrentVideoUrl(`/player?url=${url}`);
     setCurrentEpisodeIndex(index);
+    const id = vodId ?? selectedVideo?.vod_id;
+    if (id) localStorage.setItem(`last_ep_${id}`, String(index));
   };
 
+  // —— 返回结果列表 —— //
   const resetView = () => {
     setSelectedVideo(null);
     setEpisodes([]);
-    setCurrentVideoUrl('');
+    setCurrentVideoUrl("");
     setCurrentEpisodeIndex(null);
+    // 返回列表不强制滚动，保持用户当前位置
   };
 
+  // —— 评分颜色 —— //
   const getScoreColor = (score: string) => {
     const num = parseFloat(score);
-    if (num >= 8) return 'text-green-600';
-    if (num >= 7) return 'text-yellow-600';
-    if (num >= 6) return 'text-orange-600';
-    return 'text-red-600';
+    if (isNaN(num) || num < 0 || num > 10) return "text-gray-500";
+    if (num >= 8) return "text-green-600";
+    if (num >= 7) return "text-yellow-600";
+    if (num >= 6) return "text-orange-600";
+    return "text-red-600";
   };
 
+  // —— 卡片 —— //
   const renderVideoCard = (video: VideoItem) => (
-    <Card 
-      key={video.vod_id} 
-      className="cursor-pointer hover:shadow-md transition-shadow group" 
+    <Card
+      key={video.vod_id}
+      className="cursor-pointer hover:shadow-md transition-shadow group overflow-hidden !p-0"
       onClick={() => fetchEpisodes(video)}
     >
-      <CardHeader className="pb-3">
-        <div className="flex items-start justify-between gap-2">
-          <CardTitle className="text-lg leading-tight line-clamp-1 group-hover:text-primary transition-colors">
-            {video.vod_name}
-          </CardTitle>
-          <ChevronRight className="h-4 w-4 mt-1 text-muted-foreground flex-shrink-0 group-hover:text-primary transition-colors" />
-        </div>
-        <div className="flex items-center gap-2 text-sm">
-          <Badge variant="outline">{video.type_name}</Badge>
-          {video.vod_year && (
-            <span className="text-muted-foreground">{video.vod_year}</span>
-          )}
-        </div>
-      </CardHeader>
-      <CardContent className="pt-0 space-y-3">
-        <div className="flex items-center gap-2">
-          <Badge className="font-medium">{video.vod_remarks}</Badge>
-          {video.vod_score && parseFloat(video.vod_score) > 0 && (
-            <div className={`text-sm font-medium ${getScoreColor(video.vod_score)}`}>
-              ★ {video.vod_score}
+      {/* 保持卡片整体 16:9 比例 */}
+      <AspectRatio ratio={16 / 9}>
+        <div className="h-full w-full flex">
+          {/* 左侧海报，3:4 */}
+          <div
+            className="h-full flex-shrink-0 relative"
+            style={{ aspectRatio: "3 / 4" }}
+          >
+            {video.vod_pic ? (
+              <img
+                src={video.vod_pic}
+                alt={video.vod_name}
+                className="absolute inset-0 h-full w-full object-cover"
+                onError={(e) => {
+                  (e.currentTarget as HTMLImageElement).style.display = "none";
+                }}
+                loading="lazy"
+              />
+            ) : (
+              <div className="absolute inset-0 bg-muted flex items-center justify-center">
+                <Film className="h-6 w-6 text-muted-foreground" />
+              </div>
+            )}
+          </div>
+
+          {/* 右侧信息区 */}
+          <div className="flex-1 min-w-0 p-4 flex flex-col gap-3">
+            <div className="flex items-start justify-between gap-2">
+              <CardTitle className="text-base md:text-lg leading-tight line-clamp-1 group-hover:text-primary transition-colors">
+                {video.vod_name}
+              </CardTitle>
+              <ChevronRight className="h-4 w-4 mt-1 text-muted-foreground flex-shrink-0 group-hover:text-primary transition-colors" />
             </div>
-          )}
+
+            <div className="flex items-center gap-2 text-xs md:text-sm">
+              <Badge variant="outline">{video.type_name}</Badge>
+              {video.vod_year && (
+                <span className="text-muted-foreground">{video.vod_year}</span>
+              )}
+            </div>
+
+            <div className="flex items-center gap-2">
+              <Badge className="font-medium">{video.vod_remarks}</Badge>
+              {video.vod_score && parseFloat(video.vod_score) > 0 && (
+                <div
+                  className={`text-sm font-medium ${getScoreColor(
+                    video.vod_score
+                  )}`}
+                >
+                  ★ {video.vod_score}
+                </div>
+              )}
+            </div>
+
+            {video.vod_actor && (
+              <p className="text-xs md:text-sm text-muted-foreground line-clamp-2">
+                <Users className="h-3 w-3 inline mr-1" />
+                {video.vod_actor.split(",").slice(0, 4).join(" / ")}
+              </p>
+            )}
+          </div>
         </div>
-        {video.vod_actor && (
-          <p className="text-sm text-muted-foreground line-clamp-2">
-            <Users className="h-3 w-3 inline mr-1" />
-            {video.vod_actor.split(',').slice(0, 4).join(' / ')}
-          </p>
-        )}
-      </CardContent>
+      </AspectRatio>
     </Card>
   );
 
   const renderLoadingCards = (count: number) => (
-    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
       {Array.from({ length: count }).map((_, i) => (
-        <Card key={i} className="animate-pulse">
-          <CardHeader>
-            <div className="h-5 bg-muted rounded w-3/4 mb-2"></div>
-            <div className="h-4 bg-muted rounded w-1/2"></div>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-2">
-              <div className="h-6 bg-muted rounded w-20"></div>
-              <div className="h-4 bg-muted rounded w-full"></div>
+        <Card key={i} className="overflow-hidden !p-0">
+          <AspectRatio ratio={16 / 9}>
+            <div className="h-full w-full flex">
+              <div className="relative h-full" style={{ aspectRatio: "3 / 4" }}>
+                <div className="absolute inset-0 bg-muted animate-pulse" />
+              </div>
+              <div className="flex-1 p-4 space-y-3">
+                <div className="h-5 bg-muted rounded w-3/4 mb-1 animate-pulse"></div>
+                <div className="h-4 bg-muted rounded w-1/2 animate-pulse"></div>
+                <div className="h-6 bg-muted rounded w-24 animate-pulse"></div>
+                <div className="h-4 bg-muted rounded w-full animate-pulse"></div>
+              </div>
             </div>
-          </CardContent>
+          </AspectRatio>
         </Card>
       ))}
     </div>
@@ -311,36 +425,27 @@ export default function Home() {
   return (
     <div className="min-h-screen bg-background">
       <div className="container mx-auto p-6 max-w-6xl">
-        {error && (
-          <Alert variant="destructive" className="mb-6">
-            <AlertDescription className="flex items-center justify-between">
-              {error}
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => setError('')}
-                className="h-auto p-1"
-              >
-                <X className="h-4 w-4" />
-              </Button>
-            </AlertDescription>
-          </Alert>
-        )}
-
         {/* 搜索区域 */}
-        <div className={selectedVideo ? 'py-4' : 'py-12'}>
-          <div className="max-w-2xl mx-auto text-center space-y-6">
+        <div className={selectedVideo ? "py-4 md:py-6" : "py-8 md:py-16"}>
+          <div className="max-w-2xl mx-auto text-center space-y-6 md:space-y-8">
             {!selectedVideo && (
-              <div className="space-y-3">
-                <h1 
-                  className="text-4xl font-bold tracking-tight cursor-pointer hover:text-primary transition-colors" 
-                  onClick={resetToHome}
-                >
-                  YV
-                </h1>
+              <div className="space-y-4 md:space-y-6">
+                {/* 极简优雅的 YV 标题 */}
+                <div className="relative">
+                  <h1 
+                    className="text-5xl md:text-7xl font-thin text-foreground cursor-pointer hover:text-primary transition-all duration-500 relative group"
+                    onClick={resetToHome}
+                  >
+                    YV
+                    <div className="absolute bottom-0 left-1/2 transform -translate-x-1/2 w-0 h-1 bg-primary group-hover:w-full transition-all duration-500"></div>
+                  </h1>
+                </div>
+                <p className="text-sm md:text-base text-muted-foreground tracking-widest uppercase font-light">
+                  Your Video Platform
+                </p>
               </div>
             )}
-            
+
             <div className="relative">
               <div className="flex gap-2">
                 <div className="relative flex-1">
@@ -349,37 +454,40 @@ export default function Home() {
                     placeholder="公主今天看点什么？"
                     value={searchQuery}
                     onChange={(e) => handleInputChange(e.target.value)}
-                    onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
+                    onKeyDown={(e) => e.key === "Enter" && handleSearch()}
                     onFocus={() => {
                       if (!searchQuery.trim() && searchHistory.length > 0) {
                         setShowHistory(true);
                       }
                     }}
                     onBlur={() => {
-                      // 延迟隐藏历史记录，允许点击
                       setTimeout(() => setShowHistory(false), 200);
                     }}
-                    className="h-12 text-base pr-24"
+                    className="h-12 text-base pr-24 border-2 border-muted focus:border-primary/50 rounded-xl transition-all duration-300"
                   />
-                  
-                  <div className="absolute right-1 top-1/2 transform -translate-y-1/2 flex gap-1">
+
+                  <div className="absolute right-1 top-1/2 -translate-y-1/2 flex gap-1">
                     {searchQuery && (
-                      <Button 
+                      <Button
                         onClick={clearSearch}
                         variant="ghost"
                         size="sm"
-                        className="h-10 w-10 p-0 hover:bg-muted"
+                        className="h-10 w-10 p-0 hover:bg-muted rounded-lg"
                       >
                         <X className="h-4 w-4" />
                       </Button>
                     )}
-                    <Button 
-                      onClick={() => handleSearch()} 
-                      disabled={loading || !searchQuery.trim()} 
+                    <Button
+                      onClick={() => handleSearch()}
+                      disabled={loading || !searchQuery.trim()}
                       size="sm"
-                      className="h-10 w-10 p-0"
+                      className="h-10 w-10 p-0 rounded-lg transition-all duration-300 hover:scale-105"
                     >
-                      {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Search className="h-4 w-4" />}
+                      {loading ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      ) : (
+                        <Search className="h-4 w-4" />
+                      )}
                     </Button>
                   </div>
                 </div>
@@ -422,7 +530,12 @@ export default function Home() {
 
             {selectedVideo && (
               <div className="flex items-center justify-center gap-4">
-                <Button variant="ghost" size="sm" onClick={resetView} className="gap-2">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={resetView}
+                  className="gap-2"
+                >
                   <ArrowLeft className="h-4 w-4" />
                   返回搜索结果
                 </Button>
@@ -434,13 +547,13 @@ export default function Home() {
           </div>
         </div>
 
-        {/* 首页推荐内容 */}
+        {/* 首页推荐内容（最多三列） */}
         {!selectedVideo && !hasSearched && (
           <div>
             {loadingRecommended ? (
               renderLoadingCards(12)
             ) : recommendedVideos.length > 0 ? (
-              <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+              <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
                 {recommendedVideos.map((video) => renderVideoCard(video))}
               </div>
             ) : null}
@@ -450,16 +563,18 @@ export default function Home() {
         {/* 搜索加载占位符 */}
         {loading && hasSearched && renderLoadingCards(8)}
 
-        {/* 搜索结果 */}
+        {/* 搜索结果（最多三列） */}
         {!selectedVideo && hasSearched && !loading && (
           <div className="space-y-6">
             {searchResults.length > 0 ? (
               <>
                 <div className="flex items-center justify-between">
                   <h2 className="text-2xl font-semibold">搜索结果</h2>
-                  <Badge variant="secondary">找到 {searchResults.length} 部作品</Badge>
+                  <Badge variant="secondary">
+                    找到 {searchResults.length} 部作品
+                  </Badge>
                 </div>
-                <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
                   {searchResults.map((video) => renderVideoCard(video))}
                 </div>
               </>
@@ -467,7 +582,9 @@ export default function Home() {
               <div className="text-center py-12">
                 <Film className="h-12 w-12 mx-auto text-muted-foreground mb-3" />
                 <h3 className="text-lg font-medium mb-1">没有找到相关内容</h3>
-                <p className="text-muted-foreground">试试其他关键词或检查拼写</p>
+                <p className="text-muted-foreground">
+                  试试其他关键词或检查拼写
+                </p>
               </div>
             )}
           </div>
@@ -476,7 +593,6 @@ export default function Home() {
         {/* 视频详情页 */}
         {selectedVideo && (
           <div className="max-w-4xl mx-auto space-y-8">
-            
             {/* 视频标题区 */}
             <div className="text-center space-y-4">
               <h1 className="text-3xl font-bold">{selectedVideo.vod_name}</h1>
@@ -504,18 +620,28 @@ export default function Home() {
                   </span>
                 )}
               </div>
-              
+
               <div className="flex flex-wrap justify-center gap-2">
-                <Badge className="text-sm px-3 py-1">{selectedVideo.vod_remarks}</Badge>
-                {selectedVideo.vod_score && parseFloat(selectedVideo.vod_score) > 0 && (
-                  <div className={`flex items-center gap-1 px-3 py-1 rounded-full bg-muted text-sm font-medium ${getScoreColor(selectedVideo.vod_score)}`}>
-                    <Star className="h-4 w-4 fill-current" />
-                    {selectedVideo.vod_score}
-                  </div>
-                )}
-                {selectedVideo.vod_class && selectedVideo.vod_class.split(',').map((genre, index) => (
-                  <Badge key={index} variant="secondary">{genre}</Badge>
-                ))}
+                <Badge className="text-sm px-3 py-1">
+                  {selectedVideo.vod_remarks}
+                </Badge>
+                {selectedVideo.vod_score &&
+                  parseFloat(selectedVideo.vod_score) > 0 && (
+                    <div
+                      className={`flex items-center gap-1 px-3 py-1 rounded-full bg-muted text-sm font-medium ${getScoreColor(
+                        selectedVideo.vod_score
+                      )}`}
+                    >
+                      <Star className="h-4 w-4 fill-current" />
+                      {selectedVideo.vod_score}
+                    </div>
+                  )}
+                {selectedVideo.vod_class &&
+                  selectedVideo.vod_class.split(",").map((genre, index) => (
+                    <Badge key={index} variant="secondary">
+                      {genre}
+                    </Badge>
+                  ))}
               </div>
             </div>
 
@@ -527,25 +653,30 @@ export default function Home() {
                     <Play className="h-5 w-5 text-green-600" />
                     <span className="font-medium">正在播放</span>
                     {currentEpisodeIndex !== null && episodes.length > 1 && (
-                      <Badge variant="secondary">第 {currentEpisodeIndex + 1} 集</Badge>
+                      <Badge variant="secondary">
+                        第 {currentEpisodeIndex + 1} 集
+                      </Badge>
                     )}
                   </div>
-                  <Button 
-                    variant="outline" 
-                    size="sm" 
-                    onClick={() => window.open(currentVideoUrl, '_blank')}
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => window.open(currentVideoUrl, "_blank")}
                     className="gap-2"
                   >
                     <ExternalLink className="h-4 w-4" />
                     新窗口播放
                   </Button>
                 </div>
-                <AspectRatio ratio={16/9} className="bg-black rounded-lg overflow-hidden">
+                <AspectRatio
+                  ratio={16 / 9}
+                  className="bg-black rounded-lg overflow-hidden"
+                >
                   <iframe
                     src={currentVideoUrl}
                     width="100%"
                     height="100%"
-                    frameBorder="0"
+                    frameBorder={0}
                     allowFullScreen
                     allow="fullscreen *; autoplay; encrypted-media; picture-in-picture"
                     sandbox="allow-same-origin allow-scripts allow-presentation allow-forms"
@@ -554,44 +685,50 @@ export default function Home() {
               </div>
             )}
 
-            {/* 内容区 */}
+            {/* 内容区：单列时隐藏海报（hidden md:block） */}
             <div className="grid gap-8 md:grid-cols-3">
-              
-              {/* 海报 */}
-              <div className="md:col-span-1">
+              {/* 海报（只在 >= md 显示） */}
+              <div className="md:col-span-1 hidden md:block">
                 {selectedVideo.vod_pic && (
-                  <AspectRatio ratio={3/4} className="mb-6">
-                    <img 
-                      src={selectedVideo.vod_pic} 
+                  <AspectRatio ratio={3 / 4} className="mb-6">
+                    <img
+                      src={selectedVideo.vod_pic}
                       alt={selectedVideo.vod_name}
                       className="object-cover w-full h-full rounded-lg"
                       onError={(e) => {
-                        e.currentTarget.style.display = 'none';
+                        (e.currentTarget as HTMLImageElement).style.display =
+                          "none";
                       }}
                     />
                   </AspectRatio>
                 )}
-                
+
                 {/* 演职员信息 */}
                 <div className="space-y-4 text-sm">
                   {selectedVideo.vod_director && (
                     <div>
                       <p className="font-medium mb-1">导演</p>
-                      <p className="text-muted-foreground">{selectedVideo.vod_director}</p>
+                      <p className="text-muted-foreground">
+                        {selectedVideo.vod_director}
+                      </p>
                     </div>
                   )}
-                  
+
                   {selectedVideo.vod_actor && (
                     <div>
                       <p className="font-medium mb-1">主演</p>
-                      <p className="text-muted-foreground leading-relaxed">{selectedVideo.vod_actor}</p>
+                      <p className="text-muted-foreground leading-relaxed">
+                        {selectedVideo.vod_actor}
+                      </p>
                     </div>
                   )}
 
                   {selectedVideo.vod_pubdate && (
                     <div>
                       <p className="font-medium mb-1">上映时间</p>
-                      <p className="text-muted-foreground">{selectedVideo.vod_pubdate}</p>
+                      <p className="text-muted-foreground">
+                        {selectedVideo.vod_pubdate}
+                      </p>
                     </div>
                   )}
                 </div>
@@ -599,27 +736,33 @@ export default function Home() {
 
               {/* 剧集和简介 */}
               <div className="md:col-span-2 space-y-6 pb-8 md:pb-12">
-                
                 {/* 剧集选择 */}
                 {loadingEpisodes ? (
                   <div className="space-y-4">
                     <div className="h-7 bg-muted rounded w-48 animate-pulse"></div>
                     <div className="grid grid-cols-6 sm:grid-cols-8 md:grid-cols-10 gap-3">
                       {Array.from({ length: 12 }).map((_, i) => (
-                        <div key={i} className="h-12 bg-muted rounded animate-pulse"></div>
+                        <div
+                          key={i}
+                          className="h-12 bg-muted rounded animate-pulse"
+                        ></div>
                       ))}
                     </div>
                   </div>
                 ) : episodes.length > 0 ? (
                   <div className="space-y-4">
                     <h3 className="text-xl font-semibold">
-                      {episodes.length === 1 ? '开始播放' : `选择集数 (共 ${episodes.length} 集)`}
+                      {episodes.length === 1
+                        ? "开始播放"
+                        : `选择集数 (共 ${episodes.length} 集)`}
                     </h3>
-                    
+
                     {episodes.length === 1 ? (
-                      <Button 
-                        size="lg" 
-                        onClick={() => playEpisode(episodes[0], 0)}
+                      <Button
+                        size="lg"
+                        onClick={() =>
+                          playEpisode(episodes[0], 0, selectedVideo?.vod_id)
+                        }
                         className="w-full gap-2"
                       >
                         <Play className="h-5 w-5" />
@@ -630,9 +773,13 @@ export default function Home() {
                         {episodes.map((episode, index) => (
                           <Button
                             key={index}
-                            variant={currentEpisodeIndex === index ? "default" : "outline"}
+                            variant={
+                              currentEpisodeIndex === index ? "default" : "outline"
+                            }
                             size="sm"
-                            onClick={() => playEpisode(episode, index)}
+                            onClick={() =>
+                              playEpisode(episode, index, selectedVideo?.vod_id)
+                            }
                             className="h-12 text-sm font-medium hover:scale-105 transition-transform"
                           >
                             {index + 1}
