@@ -652,7 +652,7 @@ export default function Home() {
                 {selectedVideo.vod_blurb && (
                   <div className="space-y-3">
                     <h3 className="text-xl font-semibold">剧情简介</h3>
-                    <p className="text-muted-foreground leading-relaxed">
+                    <p className="text-muted-foreground leading-relaxed break-all">
                       {selectedVideo.vod_blurb}
                     </p>
                   </div>
