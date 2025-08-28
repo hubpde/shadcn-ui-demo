@@ -25,7 +25,7 @@ import {
 import { toast } from "sonner";
 
 const API_BASE =
-  "/api/api.php/provide/vod/";
+  "https://proxy.030101.xyz/https://mozhuazy.com/api.php/provide/vod/";
 
 interface VideoItem {
   vod_id: number;
@@ -362,7 +362,7 @@ export default function Home() {
           {/* 右侧信息区 */}
           <div className="flex-1 min-w-0 p-4 flex flex-col gap-3">
             <div className="flex items-start justify-between gap-2">
-              <CardTitle className="text-base md:text-lg leading-tight line-clamp-1 group-hover:text-primary transition-colors">
+              <CardTitle className="text-base md:text-lg leading-tight line-clamp-2 group-hover:text-primary transition-colors">
                 {video.vod_name}
               </CardTitle>
               <ChevronRight className="h-4 w-4 mt-1 text-muted-foreground flex-shrink-0 group-hover:text-primary transition-colors" />
@@ -426,21 +426,21 @@ export default function Home() {
     <div className="min-h-screen bg-background">
       <div className="container mx-auto p-6 max-w-6xl">
         {/* 搜索区域 */}
-        <div className={selectedVideo ? "py-4 md:py-6" : "py-8 md:py-16"}>
+        <div className={selectedVideo ? "py-4 md:py-6" : "py-4 md:py-8"}>
           <div className="max-w-2xl mx-auto text-center space-y-6 md:space-y-8">
             {!selectedVideo && (
               <div className="space-y-4 md:space-y-6">
                 {/* 极简优雅的 YV 标题 */}
                 <div className="relative">
                   <h1 
-                    className="text-5xl md:text-7xl font-thin text-foreground cursor-pointer hover:text-primary transition-all duration-500 relative group"
+                    className="text-5xl md:text-7xl font-thin text-foreground cursor-pointer hover:text-primary transition-all duration-500 relative group select-none"
                     onClick={resetToHome}
                   >
                     YV
                     <div className="absolute bottom-0 left-1/2 transform -translate-x-1/2 w-0 h-1 bg-primary group-hover:w-full transition-all duration-500"></div>
                   </h1>
                 </div>
-                <p className="text-sm md:text-base text-muted-foreground tracking-widest uppercase font-light">
+                <p className="text-sm md:text-base text-muted-foreground tracking-widest uppercase font-light select-none">
                   Your Video Platform
                 </p>
               </div>
@@ -809,6 +809,25 @@ export default function Home() {
           </div>
         )}
       </div>
+
+      {/* 底部信息 */}
+      <footer className="border-t mt-12">
+        <div className="container mx-auto px-6 py-6 max-w-6xl">
+          <div className="text-center text-sm text-muted-foreground">
+            <p className="flex items-center justify-center gap-2">
+              Powered By 
+              <a 
+                href="https://t.me/HeroCore" 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="font-medium text-foreground hover:text-primary transition-colors cursor-pointer underline-offset-4 hover:underline"
+              >
+                ymyuuu
+              </a>
+            </p>
+          </div>
+        </div>
+      </footer>
     </div>
   );
 }
